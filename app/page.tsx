@@ -22,6 +22,7 @@ import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
 import { useEffect, useState } from "react";
+const NotFoundImage = "https://placehold.co/600x400?text=Image+Not+Found";
 
 interface Movie {
   adult: boolean;
@@ -139,14 +140,16 @@ export default function Home() {
                   flexDirection: "column",
                 }}
               >
-                {movie.poster_path && (
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                    alt={movie.title}
-                  />
-                )}
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={
+                    movie.poster_path
+                      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                      : NotFoundImage
+                  }
+                  alt={movie.title}
+                />
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography gutterBottom variant="h5" component="div">
                     {movie.title}
