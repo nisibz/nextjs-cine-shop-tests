@@ -132,7 +132,13 @@ export default function Home() {
           )
           .map((movie: Movie) => (
             <Grid key={movie.id} size={{ xs: 12, sm: 4, md: 3 }}>
-              <Card sx={{ height: "100%" }}>
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
                 {movie.poster_path && (
                   <CardMedia
                     component="img"
@@ -141,7 +147,7 @@ export default function Home() {
                     alt={movie.title}
                   />
                 )}
-                <CardContent>
+                <CardContent sx={{ flexGrow: 1 }}>
                   <Typography gutterBottom variant="h5" component="div">
                     {movie.title}
                   </Typography>
@@ -155,6 +161,8 @@ export default function Home() {
                   >
                     {movie.overview.substring(0, 100)}...
                   </Typography>
+                </CardContent>
+                <Box sx={{ m: 2 }}>
                   {(() => {
                     const isInCart = cart.some((item) => item.id === movie.id);
                     return (
@@ -165,13 +173,12 @@ export default function Home() {
                         startIcon={<AddShoppingCartIcon />}
                         onClick={() => addToCart(movie)}
                         disabled={isInCart}
-                        sx={{ mt: 2 }}
                       >
                         {isInCart ? "Added to Cart" : "Add to Cart"}
                       </Button>
                     );
                   })()}
-                </CardContent>
+                </Box>
               </Card>
             </Grid>
           ))}
