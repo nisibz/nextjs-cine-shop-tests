@@ -5,6 +5,7 @@ import {
   CardContent,
   CardMedia,
   Grid,
+  TextField,
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -30,6 +31,7 @@ export default function Home() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -53,36 +55,50 @@ export default function Home() {
 
   return (
     <Box sx={{ width: "100%" }}>
+      <Box sx={{ p: 4 }}>
+        <TextField
+          fullWidth
+          label="Search movies"
+          variant="outlined"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ mb: 4 }}
+        />
+      </Box>
       <Grid container spacing={2} sx={{ padding: 4 }}>
-        {movies.map((movie: Movie) => (
-          <Grid key={movie.id} size={{ xs: 12, sm: 4, md: 3 }}>
-            <Card sx={{ height: "100%" }}>
-              {movie.poster_path && (
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  alt={movie.title}
-                />
-              )}
-              <CardContent>
-                <Typography gutterBottom variant="h5" component="div">
-                  {movie.title}
-                </Typography>
-                <Typography variant="subtitle1" color="text.secondary">
-                  {movie.release_date}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 1 }}
-                >
-                  {movie.overview.substring(0, 100)}...
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+        {movies
+          .filter((movie) =>
+            movie.title.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+          .map((movie: Movie) => (
+            <Grid key={movie.id} size={{ xs: 12, sm: 4, md: 3 }}>
+              <Card sx={{ height: "100%" }}>
+                {movie.poster_path && (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                    alt={movie.title}
+                  />
+                )}
+                <CardContent>
+                  <Typography gutterBottom variant="h5" component="div">
+                    {movie.title}
+                  </Typography>
+                  <Typography variant="subtitle1" color="text.secondary">
+                    {movie.release_date}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 1 }}
+                  >
+                    {movie.overview.substring(0, 100)}...
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
       </Grid>
     </Box>
   );
