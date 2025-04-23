@@ -17,6 +17,11 @@ import {
   Stack,
   ListItemAvatar,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
@@ -37,6 +42,29 @@ export default function Home() {
     return [];
   });
   const [cartOpen, setCartOpen] = useState(false);
+  const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (isCheckoutDialogOpen && countdown > 0) {
+      const id = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+      setTimerId(id);
+
+      return () => {
+        if (id) clearInterval(id);
+      };
+    }
+  }, [isCheckoutDialogOpen]);
+
+  useEffect(() => {
+    if (countdown === 0 && timerId) {
+      clearInterval(timerId);
+      setCountdown(60); // Reset for next time
+    }
+  }, [countdown, timerId]);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -69,6 +97,17 @@ export default function Home() {
 
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
+
+  const calculateTotal = (cartItems: Movie[]) => {
+    const subtotal = cartItems.reduce((sum, movie) => sum + movie.price, 0);
+    const itemCount = cartItems.length;
+
+    let discount = 0;
+    if (itemCount > 5) discount = 0.2;
+    else if (itemCount > 3) discount = 0.1;
+
+    return subtotal * (1 - discount);
+  };
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -122,6 +161,13 @@ export default function Home() {
                   </Typography>
                   <Typography variant="subtitle1" color="text.secondary">
                     {movie.release_date}
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    sx={{ mt: 1 }}
+                  >
+                    Price: ${movie.price.toFixed(2)}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -209,7 +255,25 @@ export default function Home() {
                     </ListItemAvatar>
                     <ListItemText
                       primary={movie.title}
-                      secondary={`Released: ${movie.release_date}`}
+                      secondary={
+                        <>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.primary"
+                          >
+                            Released: {movie.release_date}
+                          </Typography>
+                          <br />
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.primary"
+                          >
+                            Price: ${movie.price.toFixed(2)}
+                          </Typography>
+                        </>
+                      }
                     />
                   </ListItem>
                 ))}
@@ -219,32 +283,124 @@ export default function Home() {
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "space-evenly",
+                flexDirection: "column",
                 p: 2,
                 pb: 4,
                 gap: 2,
+                borderTop: "1px solid",
+                borderColor: "divider",
               }}
             >
-              <Button
-                variant="outlined"
-                color="error"
-                fullWidth
-                onClick={clearCart}
-              >
-                Clear Cart
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                onClick={() => alert("Proceeding to checkout...")}
-              >
-                Checkout
-              </Button>
+              <Box sx={{ textAlign: "right", mb: 2 }}>
+                <Stack spacing={0.5}>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2">Items:</Typography>
+                    <Typography variant="body2">{cart.length}</Typography>
+                  </Box>
+                  {cart.length > 3 && (
+                    <>
+                      <Box display="flex" justifyContent="space-between">
+                        <Typography variant="body2">Subtotal:</Typography>
+                        <Typography variant="body2">
+                          $
+                          {cart.reduce((sum, m) => sum + m.price, 0).toFixed(2)}
+                        </Typography>
+                      </Box>
+                      <Box display="flex" justifyContent="space-between">
+                        <Typography variant="body2">Discount:</Typography>
+                        <Typography variant="body2" color="green">
+                          {cart.length > 5 ? "20%" : "10%"}
+                        </Typography>
+                      </Box>
+                    </>
+                  )}
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="h6">Total:</Typography>
+                    <Typography variant="h6">
+                      ${calculateTotal(cart).toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  fullWidth
+                  onClick={clearCart}
+                >
+                  Clear Cart
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  onClick={() => {
+                    setIsCheckoutDialogOpen(true);
+                    setCountdown(60);
+                  }}
+                >
+                  Checkout
+                </Button>
+              </Box>
             </Box>
           </>
         )}
       </Drawer>
+
+      <Dialog
+        open={isCheckoutDialogOpen}
+        onClose={() => setIsCheckoutDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Checkout</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <Stack spacing={1}>
+              <Typography>Items: {cart.length}</Typography>
+              <Typography>
+                Subtotal: $
+                {cart.reduce((sum, m) => sum + m.price, 0).toFixed(2)}
+              </Typography>
+              {cart.length > 3 && (
+                <Typography color="green">
+                  Discount Applied: {cart.length > 5 ? "20%" : "10%"}
+                </Typography>
+              )}
+              <Typography variant="h6">
+                Total: ${calculateTotal(cart).toFixed(2)}
+              </Typography>
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  Confirm within {countdown} seconds
+                </Typography>
+                <Typography variant="caption" display="block">
+                  (Payment will be processed automatically)
+                </Typography>
+              </Box>
+            </Stack>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setIsCheckoutDialogOpen(false);
+              if (timerId) clearInterval(timerId);
+              setCountdown(60);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              setIsCheckoutDialogOpen(false);
+              clearCart();
+            }}
+            color="success"
+          >
+            Confirm Payment
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
