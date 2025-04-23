@@ -22,29 +22,12 @@ import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
 import { useEffect, useState } from "react";
+import useMovies from "./hooks/useMovies";
+import type { Movie } from "./types.ts";
 const NotFoundImage = "https://placehold.co/600x400?text=Image+Not+Found";
 
-interface Movie {
-  adult: boolean;
-  backdrop_path: string;
-  genre_ids: number[];
-  id: number;
-  original_language: string;
-  original_title: string;
-  overview: string;
-  popularity: number;
-  poster_path: string;
-  release_date: string;
-  title: string;
-  video: boolean;
-  vote_average: number;
-  vote_count: number;
-}
-
 export default function Home() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { movies, loading, error } = useMovies();
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<Movie[]>(() => {
     if (typeof window !== "undefined") {
@@ -82,23 +65,6 @@ export default function Home() {
         console.error("Failed to load cart:", err);
       }
     }
-  }, []);
-
-  useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        const res = await fetch(`/api/movies?query=a`);
-        if (!res.ok) throw new Error("Failed to fetch movies");
-        const data = await res.json();
-        setMovies(data.results || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMovies();
   }, []);
 
   if (loading) return <Typography>Loading...</Typography>;
