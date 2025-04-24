@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cine Shop App
+
+A modern e-commerce application for movie enthusiasts
+
+## Features
+
+- Movie search functionality powered by TMDB API
+- Shopping cart system with local storage persistence
+- Responsive UI built with Material UI components
+- Docker support for both development and production
+- Cart price calculations with discounts for bulk purchases
+- Environment variables configuration for API keys
+
+## Endpoint
+
+### 🎥 Main Application (`/`)
+
+**File:** `app/page.tsx`
+
+**Features:**
+
+- 🔍 Interactive movie search with debouncing
+- 🖼️ Responsive movie card grid display
+- 🛒 Cart management with local storage
+  - Bulk discounts (3+ items)
+  - Cart drawer interface
+- 💳 Integrated QR payment system
+  - 60-second timeout functionality
+  - Automatic transaction expiration
+
+### 🔒 Admin Dashboard (`/admin`)
+
+**File:** `app/admin/page.tsx`
+
+**Features:**
+
+- 📊 Movie price management table
+- 🔎 Full-text search across catalog
+- ✏️ Direct price editing with persistence
+- 📑 Paginated results
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20.x or later
+- npm
+- Docker (optional)
+
+### Installation
+
+Clone this repository:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/nisibz/nextjs-cine-shop-tests.git
+cd nextjs-cine-shop-tests
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env` file with the following command:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env
+```
 
-## Learn More
+You can obtain a TMDB API key by creating an account at [https://www.themoviedb.org/](https://www.themoviedb.org/)
 
-To learn more about Next.js, take a look at the following resources:
+## Development Mode
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Local Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Install dependencies:
 
-## Deploy on Vercel
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. Start the development server:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   npm run dev
+   ```
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### Docker Development Setup
+
+1. Build the development Docker image:
+
+   ```bash
+   docker build -t nextjs-cine-shop:dev .
+   ```
+
+2. Run the container with volume mounting for live code updates:
+
+   ```bash
+   docker run -v $(pwd):/app -p 3000:3000 --name nextjs-cine-shop-dev nextjs-cine-shop:dev
+   ```
+
+3. Access the application at [http://localhost:3000](http://localhost:3000)
+
+## Production Mode
+
+### Local Production Setup
+
+1. Create an optimized production build:
+
+   ```bash
+   npm run build
+   ```
+
+2. Start the production server:
+
+   ```bash
+   npm start
+   ```
+
+3. Access the application at [http://localhost:3000](http://localhost:3000)
+
+### Docker Production Setup
+
+1. Build the production Docker image:
+
+   ```bash
+   docker build -t nextjs-cine-shop:prod -f Dockerfile.prod .
+   ```
+
+2. Run the production container:
+
+   ```bash
+   docker run -p 3000:3000 --name nextjs-cine-shop-prod nextjs-cine-shop:prod
+   ```
+
+3. Access the application at [http://localhost:3000](http://localhost:3000)
+
+## Technology Stack
+
+- Next.js - React framework
+- Material UI (MUI) - Component library
+- TMDB API - Movie database
+- Docker - Containerization
+
+## License
+
+This project is licensed under the MIT License
