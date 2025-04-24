@@ -18,11 +18,12 @@ import {
   TextField,
   IconButton,
   Skeleton,
+  TablePagination,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { filterMovies, getNotFoundText } from "../utils/filterMovies";
 import useMovies from "./../hooks/useMovies";
 import type { Movie } from "./../types";
@@ -33,6 +34,8 @@ export default function AdminPage() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [newPrice, setNewPrice] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handlePriceUpdate = () => {
     if (selectedMovie) {
@@ -45,6 +48,21 @@ export default function AdminPage() {
     () => filterMovies(movies, searchQuery),
     [movies, searchQuery],
   );
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery]);
 
   if (loading) {
     return (
@@ -125,43 +143,45 @@ export default function AdminPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredMovies.map((movie: Movie) => (
-              <TableRow key={movie.id}>
-                <TableCell>
-                  {movie.poster_path && (
-                    <Image
-                      src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
-                      alt={movie.title}
-                      width={50}
-                      height={75}
-                      style={{
-                        width: 50,
-                        height: 75,
-                        objectFit: "cover",
+            {filteredMovies
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((movie: Movie) => (
+                <TableRow key={movie.id}>
+                  <TableCell>
+                    {movie.poster_path && (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
+                        alt={movie.title}
+                        width={50}
+                        height={75}
+                        style={{
+                          width: 50,
+                          height: 75,
+                          objectFit: "cover",
+                        }}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>{movie.title}</TableCell>
+                  <TableCell>
+                    {new Date(movie.release_date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>${movie.price.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => {
+                        setSelectedMovie(movie);
+                        setNewPrice(movie.price.toFixed(2));
+                        setOpenDialog(true);
                       }}
-                    />
-                  )}
-                </TableCell>
-                <TableCell>{movie.title}</TableCell>
-                <TableCell>
-                  {new Date(movie.release_date).toLocaleDateString()}
-                </TableCell>
-                <TableCell>${movie.price.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    startIcon={<EditIcon />}
-                    onClick={() => {
-                      setSelectedMovie(movie);
-                      setNewPrice(movie.price.toFixed(2));
-                      setOpenDialog(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+                    >
+                      Edit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             {filteredMovies.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
@@ -174,6 +194,21 @@ export default function AdminPage() {
           </TableBody>
         </Table>
       </TableContainer>
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={filteredMovies.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        sx={{
+          ".MuiTablePagination-toolbar": {
+            padding: 2,
+            backgroundColor: (theme) => theme.palette.background.default,
+          },
+        }}
+      />
 
       <Dialog fullWidth open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
