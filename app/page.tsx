@@ -22,6 +22,7 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
+import { QRCodeCanvas } from "qrcode.react";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
@@ -34,13 +35,14 @@ const NotFoundImage = "https://placehold.co/600x400?text=Image+Not+Found";
 export default function Home() {
   const { movies, loading, error } = useMovies();
   const [searchQuery, setSearchQuery] = useState("");
+  const [orderNumber, setOrderNumber] = useState<number>(0);
+  const [transactionDate, setTransactionDate] = useState<string>("");
   const [cart, setCart] = useState<number[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("cart");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          // Migrate old format (movie objects) to new format (IDs)
           return parsed.length && typeof parsed[0] === "object"
             ? parsed.map((m: Movie) => m.id)
             : parsed;
@@ -80,7 +82,7 @@ export default function Home() {
   }, [cart]);
 
   const addToCart = (movie: Movie) => {
-    setCart((prev) => [...new Set([...prev, movie.id])]); // Prevent duplicates
+    setCart((prev) => [...new Set([...prev, movie.id])]);
   };
 
   const removeFromCart = (movieId: number) => {
@@ -257,7 +259,7 @@ export default function Home() {
               <List>
                 {cart.map((movieId) => {
                   const movie = movies.find((m) => m.id === movieId);
-                  if (!movie) return null; // Handle case where movie was removed
+                  if (!movie) return null;
                   return (
                     <ListItem
                       key={movie.id}
@@ -275,7 +277,7 @@ export default function Home() {
                           variant="square"
                           src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                           alt={movie.title}
-                          sx={{ width: 56, height: 84, mr: 2 }} // Matches typical poster aspect ratio
+                          sx={{ width: 56, height: 84, mr: 2 }}
                         />
                       </ListItemAvatar>
                       <ListItemText
@@ -370,6 +372,8 @@ export default function Home() {
                   onClick={() => {
                     setIsCheckoutDialogOpen(true);
                     setCountdown(60);
+                    setOrderNumber(Math.floor(Date.now() / 1000));
+                    setTransactionDate(new Date().toLocaleString());
                   }}
                 >
                   Checkout
@@ -401,47 +405,68 @@ export default function Home() {
           <CloseIcon />
         </IconButton>
 
-        <DialogContent dividers>
-          <Stack spacing={0.5}>
-            <Box display="flex" justifyContent="space-between">
-              <Typography variant="body2">Items:</Typography>
-              <Typography variant="body2">{cart.length}</Typography>
-            </Box>
-            {cart.length > 3 && (
-              <>
-                <Box display="flex" justifyContent="space-between">
-                  <Typography variant="body2">Subtotal:</Typography>
-                  <Typography variant="body2">
-                    $
-                    {cart
-                      .map((id) => movies.find((m) => m.id === id)?.price || 0)
-                      .reduce((sum, price) => sum + price, 0)
-                      .toFixed(2)}
-                  </Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between">
-                  <Typography variant="body2">Discount:</Typography>
-                  <Typography variant="body2" color="green">
-                    {cart.length > 5 ? "20%" : "10%"}
-                  </Typography>
-                </Box>
-              </>
-            )}
-            <Box display="flex" justifyContent="space-between">
-              <Typography variant="h6">Total:</Typography>
-              <Typography variant="h6">
-                ${calculateTotal(cart).toFixed(2)}
+        <DialogContent
+          dividers
+          sx={{
+            padding: "20px",
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ my: 1 }}>
+            Order Number: #{orderNumber}
+          </Typography>
+          <Typography variant="subtitle2" sx={{ my: 1 }}>
+            Transaction Date: {transactionDate}
+          </Typography>
+
+          <Box sx={{ position: "relative" }}>
+            <QRCodeCanvas
+              value={
+                countdown === 0 ? "payment-expired" : `https://reactjs.org/`
+              }
+              style={{
+                filter: countdown === 0 ? "grayscale(100%)" : "none",
+                pointerEvents: countdown === 0 ? "none" : "auto",
+                opacity: countdown === 0 ? 0.2 : 1,
+              }}
+            />
+            {countdown === 0 && (
+              <Typography
+                variant="h5"
+                sx={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  color: "error.main",
+                  fontWeight: "bold",
+                  textShadow: "0 0 8px white",
+                }}
+              >
+                EXPIRED
               </Typography>
-            </Box>
-          </Stack>
-          <Box sx={{ mt: 2, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
+            )}
+          </Box>
+          {countdown > 0 ? (
+            <Typography variant="subtitle2" sx={{ my: 2 }}>
               Confirm within {countdown} seconds
             </Typography>
-            <Typography variant="caption" display="block">
-              (Payment will be processed automatically)
+          ) : (
+            <Typography variant="subtitle2" color="error" sx={{ my: 2 }}>
+              Payment timeout - Please try again
             </Typography>
-          </Box>
+          )}
+
+          <Typography
+            variant="h5"
+            sx={{
+              backgroundColor: "#f0f0f0",
+              padding: "10px",
+              borderRadius: "10px",
+            }}
+          >
+            ${calculateTotal(cart).toFixed(2)}
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button
@@ -457,13 +482,23 @@ export default function Home() {
           </Button>
           <Button
             variant="contained"
-            color="success"
+            color={countdown === 0 ? "warning" : "success"}
             onClick={() => {
-              setIsCheckoutDialogOpen(false);
-              clearCart();
+              if (countdown === 0) {
+                setCountdown(60);
+                const id = setInterval(() => {
+                  setCountdown((prev) => prev - 1);
+                }, 1000);
+                setTimerId(id);
+                setOrderNumber(Math.floor(Date.now() / 1000));
+                setTransactionDate(new Date().toLocaleString());
+              } else {
+                setIsCheckoutDialogOpen(false);
+                clearCart();
+              }
             }}
           >
-            Confirm Payment
+            {countdown === 0 ? "Retry Payment" : "Confirm Payment"}
           </Button>
         </DialogActions>
       </Dialog>
