@@ -34,10 +34,20 @@ const NotFoundImage = "https://placehold.co/600x400?text=Image+Not+Found";
 export default function Home() {
   const { movies, loading, error } = useMovies();
   const [searchQuery, setSearchQuery] = useState("");
-  const [cart, setCart] = useState<Movie[]>(() => {
+  const [cart, setCart] = useState<number[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("cart");
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Migrate old format (movie objects) to new format (IDs)
+          return parsed.length && typeof parsed[0] === "object"
+            ? parsed.map((m: Movie) => m.id)
+            : parsed;
+        } catch {
+          return [];
+        }
+      }
     }
     return [];
   });
@@ -70,13 +80,11 @@ export default function Home() {
   }, [cart]);
 
   const addToCart = (movie: Movie) => {
-    if (!cart.some((item) => item.id === movie.id)) {
-      setCart([...cart, movie]);
-    }
+    setCart((prev) => [...new Set([...prev, movie.id])]); // Prevent duplicates
   };
 
   const removeFromCart = (movieId: number) => {
-    setCart(cart.filter((item) => item.id !== movieId));
+    setCart((prev) => prev.filter((id) => id !== movieId));
   };
 
   const clearCart = () => {
@@ -103,9 +111,12 @@ export default function Home() {
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
 
-  const calculateTotal = (cartItems: Movie[]) => {
-    const subtotal = cartItems.reduce((sum, movie) => sum + movie.price, 0);
-    const itemCount = cartItems.length;
+  const calculateTotal = (cartIds: number[]) => {
+    const cartMovies = cartIds
+      .map((id) => movies.find((m) => m.id === id))
+      .filter(Boolean) as Movie[];
+    const subtotal = cartMovies.reduce((sum, movie) => sum + movie.price, 0);
+    const itemCount = cartMovies.length;
 
     let discount = 0;
     if (itemCount > 5) discount = 0.2;
@@ -180,7 +191,7 @@ export default function Home() {
               </CardContent>
               <Box sx={{ m: 2 }}>
                 {(() => {
-                  const isInCart = cart.some((item) => item.id === movie.id);
+                  const isInCart = cart.includes(movie.id);
                   return (
                     <Button
                       variant={isInCart ? "outlined" : "contained"}
@@ -244,50 +255,54 @@ export default function Home() {
               }}
             >
               <List>
-                {cart.map((movie) => (
-                  <ListItem
-                    key={movie.id}
-                    secondaryAction={
-                      <IconButton
-                        edge="end"
-                        onClick={() => removeFromCart(movie.id)}
-                      >
-                        <RemoveShoppingCartIcon color="error" />
-                      </IconButton>
-                    }
-                  >
-                    <ListItemAvatar>
-                      <Avatar
-                        variant="square"
-                        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                        alt={movie.title}
-                        sx={{ width: 56, height: 84, mr: 2 }} // Matches typical poster aspect ratio
-                      />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={movie.title}
-                      secondary={
-                        <>
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            color="text.primary"
-                          >
-                            Released: {movie.release_date}
-                          </Typography>
-                          <br />
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            color="text.primary"
-                          >
-                            Price: ${movie.price.toFixed(2)}
-                          </Typography>
-                        </>
+                {cart.map((movieId) => {
+                  const movie = movies.find((m) => m.id === movieId);
+                  if (!movie) return null; // Handle case where movie was removed
+                  return (
+                    <ListItem
+                      key={movie.id}
+                      secondaryAction={
+                        <IconButton
+                          edge="end"
+                          onClick={() => removeFromCart(movie.id)}
+                        >
+                          <RemoveShoppingCartIcon color="error" />
+                        </IconButton>
                       }
-                    />
-                  </ListItem>
-                ))}
+                    >
+                      <ListItemAvatar>
+                        <Avatar
+                          variant="square"
+                          src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                          alt={movie.title}
+                          sx={{ width: 56, height: 84, mr: 2 }} // Matches typical poster aspect ratio
+                        />
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={movie.title}
+                        secondary={
+                          <>
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                            >
+                              Released: {movie.release_date}
+                            </Typography>
+                            <br />
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                            >
+                              Price: ${movie.price.toFixed(2)}
+                            </Typography>
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  );
+                })}
               </List>
             </Box>
 
@@ -314,7 +329,13 @@ export default function Home() {
                         <Typography variant="body2">Subtotal:</Typography>
                         <Typography variant="body2">
                           $
-                          {cart.reduce((sum, m) => sum + m.price, 0).toFixed(2)}
+                          {cart
+                            .map(
+                              (id) =>
+                                movies.find((m) => m.id === id)?.price || 0,
+                            )
+                            .reduce((sum, price) => sum + price, 0)
+                            .toFixed(2)}
                         </Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between">
@@ -391,7 +412,11 @@ export default function Home() {
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body2">Subtotal:</Typography>
                   <Typography variant="body2">
-                    ${cart.reduce((sum, m) => sum + m.price, 0).toFixed(2)}
+                    $
+                    {cart
+                      .map((id) => movies.find((m) => m.id === id)?.price || 0)
+                      .reduce((sum, price) => sum + price, 0)
+                      .toFixed(2)}
                   </Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between">
