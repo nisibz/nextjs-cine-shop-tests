@@ -21,12 +21,28 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Skeleton,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
 import { useEffect, useState, useMemo } from "react";
+
+const MovieSkeleton = () => (
+  <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Skeleton variant="rectangular" height={200} />
+    <CardContent sx={{ flexGrow: 1 }}>
+      <Skeleton variant="text" width="60%" height={32} />
+      <Skeleton variant="text" width="40%" height={24} />
+      <Skeleton variant="text" width="30%" height={24} sx={{ mt: 1 }} />
+      <Skeleton variant="text" height={72} sx={{ mt: 1 }} />
+    </CardContent>
+    <Box sx={{ m: 2 }}>
+      <Skeleton variant="rounded" height={36} />
+    </Box>
+  </Card>
+);
 import { filterMovies, getNotFoundText } from "./utils/filterMovies";
 import useMovies from "./hooks/useMovies";
 import type { Movie } from "./types.ts";
@@ -110,7 +126,47 @@ export default function Home() {
     [movies, searchQuery],
   );
 
-  if (loading) return <Typography>Loading...</Typography>;
+  if (loading) {
+    return (
+      <Box sx={{ width: "100%" }}>
+        <Box
+          sx={{
+            p: 4,
+            pb: 2,
+            position: "sticky",
+            top: "0%",
+            zIndex: 99,
+            bgcolor: "white",
+          }}
+        >
+          <Stack direction="row" spacing={2}>
+            <Box sx={{ display: "flex", flexGrow: 1 }}>
+              <TextField
+                fullWidth
+                label="Search movies"
+                variant="outlined"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Box>
+            <Box sx={{ display: "flex" }}>
+              <IconButton onClick={() => setCartOpen(true)}>
+                <AddShoppingCartIcon fontSize="large" />
+              </IconButton>
+            </Box>
+          </Stack>
+        </Box>
+
+        <Grid container spacing={2} sx={{ padding: 4 }}>
+          {[...Array(8)].map((_, index) => (
+            <Grid key={index} size={{ xs: 12, sm: 4, md: 3 }}>
+              <MovieSkeleton />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
   if (error) return <Typography color="error">{error}</Typography>;
 
   const calculateTotal = (cartIds: number[]) => {
