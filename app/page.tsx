@@ -129,7 +129,16 @@ export default function Home() {
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Box sx={{ p: 4, pb: 0 }}>
+      <Box
+        sx={{
+          p: 4,
+          pb: 2,
+          position: "sticky",
+          top: "0%",
+          zIndex: 99,
+          bgcolor: "white",
+        }}
+      >
         <Stack direction="row" spacing={2}>
           <Box sx={{ display: "flex", flexGrow: 1 }}>
             <TextField
