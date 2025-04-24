@@ -1,7 +1,6 @@
 "use client";
 import {
   Box,
-  CircularProgress,
   Paper,
   Table,
   TableBody,
@@ -18,6 +17,7 @@ import {
   Button,
   TextField,
   IconButton,
+  Skeleton,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
@@ -46,7 +46,57 @@ export default function AdminPage() {
     [movies, searchQuery],
   );
 
-  if (loading) return <CircularProgress />;
+  if (loading) {
+    return (
+      <Box p={4}>
+        <Typography variant="h4" gutterBottom>
+          <Skeleton width={300} />
+        </Typography>
+
+        <Skeleton variant="rounded" height={56} sx={{ my: 2 }} />
+
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {["Poster", "Title", "Release Date", "Price", "Edit Price"].map(
+                  (header) => (
+                    <TableCell key={header}>
+                      <Skeleton
+                        variant="text"
+                        width={header === "Poster" ? 50 : "auto"}
+                      />
+                    </TableCell>
+                  ),
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...Array(5)].map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton variant="rectangular" width={50} height={75} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width={150} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width={100} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width={80} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="rounded" width={100} height={36} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    );
+  }
   if (error) return <Typography color="error">{error}</Typography>;
 
   return (
