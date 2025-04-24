@@ -17,8 +17,10 @@ import {
   DialogActions,
   Button,
   TextField,
+  IconButton,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import CloseIcon from "@mui/icons-material/Close";
 import Image from "next/image";
 import { useState, useMemo } from "react";
 import { filterMovies, getNotFoundText } from "../utils/filterMovies";
@@ -41,7 +43,7 @@ export default function AdminPage() {
 
   const filteredMovies = useMemo(
     () => filterMovies(movies, searchQuery),
-    [movies, searchQuery]
+    [movies, searchQuery],
   );
 
   if (loading) return <CircularProgress />;
@@ -74,42 +76,42 @@ export default function AdminPage() {
           </TableHead>
           <TableBody>
             {filteredMovies.map((movie: Movie) => (
-                <TableRow key={movie.id}>
-                  <TableCell>
-                    {movie.poster_path && (
-                      <Image
-                        src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
-                        alt={movie.title}
-                        width={50}
-                        height={75}
-                        style={{
-                          width: 50,
-                          height: 75,
-                          objectFit: "cover",
-                        }}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>{movie.title}</TableCell>
-                  <TableCell>
-                    {new Date(movie.release_date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>${movie.price.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outlined"
-                      startIcon={<EditIcon />}
-                      onClick={() => {
-                        setSelectedMovie(movie);
-                        setNewPrice(movie.price.toFixed(2));
-                        setOpenDialog(true);
+              <TableRow key={movie.id}>
+                <TableCell>
+                  {movie.poster_path && (
+                    <Image
+                      src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
+                      alt={movie.title}
+                      width={50}
+                      height={75}
+                      style={{
+                        width: 50,
+                        height: 75,
+                        objectFit: "cover",
                       }}
-                    >
-                      Edit
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    />
+                  )}
+                </TableCell>
+                <TableCell>{movie.title}</TableCell>
+                <TableCell>
+                  {new Date(movie.release_date).toLocaleDateString()}
+                </TableCell>
+                <TableCell>${movie.price.toFixed(2)}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="outlined"
+                    startIcon={<EditIcon />}
+                    onClick={() => {
+                      setSelectedMovie(movie);
+                      setNewPrice(movie.price.toFixed(2));
+                      setOpenDialog(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
             {filteredMovies.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
@@ -123,9 +125,23 @@ export default function AdminPage() {
         </Table>
       </TableContainer>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Edit Price</DialogTitle>
-        <DialogContent>
+      <Dialog fullWidth open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+          Edit Price
+        </DialogTitle>
+        <IconButton
+          aria-label="close"
+          onClick={() => setOpenDialog(false)}
+          sx={(theme) => ({
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent dividers>
           <DialogContentText>
             Update price for {selectedMovie?.title}
           </DialogContentText>
@@ -141,8 +157,20 @@ export default function AdminPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handlePriceUpdate}>Save</Button>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => setOpenDialog(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handlePriceUpdate}
+          >
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
