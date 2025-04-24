@@ -20,7 +20,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
 } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
@@ -63,7 +62,6 @@ export default function Home() {
   useEffect(() => {
     if (countdown === 0 && timerId) {
       clearInterval(timerId);
-      setCountdown(60); // Reset for next time
     }
   }, [countdown, timerId]);
 
@@ -83,6 +81,7 @@ export default function Home() {
 
   const clearCart = () => {
     setCart([]);
+    setCartOpen(false);
   };
 
   useEffect(() => {
@@ -98,7 +97,7 @@ export default function Home() {
 
   const filteredMovies = useMemo(
     () => filterMovies(movies, searchQuery),
-    [movies, searchQuery]
+    [movies, searchQuery],
   );
 
   if (loading) return <Typography>Loading...</Typography>;
@@ -139,70 +138,74 @@ export default function Home() {
       </Box>
       <Grid container spacing={2} sx={{ padding: 4 }}>
         {filteredMovies.map((movie: Movie) => (
-            <Grid key={movie.id} size={{ xs: 12, sm: 4, md: 3 }}>
-              <Card
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={
-                    movie.poster_path
-                      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-                      : NotFoundImage
-                  }
-                  alt={movie.title}
-                />
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography gutterBottom variant="h5" component="div">
-                    {movie.title}
-                  </Typography>
-                  <Typography variant="subtitle1" color="text.secondary">
-                    {movie.release_date}
-                  </Typography>
-                  <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    sx={{ mt: 1 }}
-                  >
-                    Price: ${movie.price.toFixed(2)}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 1 }}
-                  >
-                    {movie.overview.substring(0, 100)}...
-                  </Typography>
-                </CardContent>
-                <Box sx={{ m: 2 }}>
-                  {(() => {
-                    const isInCart = cart.some((item) => item.id === movie.id);
-                    return (
-                      <Button
-                        variant={isInCart ? "outlined" : "contained"}
-                        color={isInCart ? "success" : "primary"}
-                        fullWidth
-                        startIcon={<AddShoppingCartIcon />}
-                        onClick={() => addToCart(movie)}
-                        disabled={isInCart}
-                      >
-                        {isInCart ? "Added to Cart" : "Add to Cart"}
-                      </Button>
-                    );
-                  })()}
-                </Box>
-              </Card>
-            </Grid>
-          ))}
+          <Grid key={movie.id} size={{ xs: 12, sm: 4, md: 3 }}>
+            <Card
+              sx={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <CardMedia
+                component="img"
+                height="200"
+                image={
+                  movie.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                    : NotFoundImage
+                }
+                alt={movie.title}
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h5" component="div">
+                  {movie.title}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  {movie.release_date}
+                </Typography>
+                <Typography
+                  variant="subtitle1"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
+                  Price: ${movie.price.toFixed(2)}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
+                  {movie.overview.substring(0, 100)}...
+                </Typography>
+              </CardContent>
+              <Box sx={{ m: 2 }}>
+                {(() => {
+                  const isInCart = cart.some((item) => item.id === movie.id);
+                  return (
+                    <Button
+                      variant={isInCart ? "outlined" : "contained"}
+                      color={isInCart ? "success" : "primary"}
+                      fullWidth
+                      startIcon={<AddShoppingCartIcon />}
+                      onClick={() => addToCart(movie)}
+                      disabled={isInCart}
+                    >
+                      {isInCart ? "Added to Cart" : "Add to Cart"}
+                    </Button>
+                  );
+                })()}
+              </Box>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       {filteredMovies.length === 0 && (
-        <Typography variant="h5" align="center" sx={{ p: 4, color: "text.secondary" }}>
+        <Typography
+          variant="h5"
+          align="center"
+          sx={{ p: 4, color: "text.secondary" }}
+        >
           {getNotFoundText(searchQuery)}
         </Typography>
       )}
@@ -359,37 +362,66 @@ export default function Home() {
       <Dialog
         open={isCheckoutDialogOpen}
         onClose={() => setIsCheckoutDialogOpen(false)}
+        fullWidth
       >
-        <DialogTitle>Confirm Checkout</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            <Stack spacing={1}>
-              <Typography>Items: {cart.length}</Typography>
-              <Typography>
-                Subtotal: $
-                {cart.reduce((sum, m) => sum + m.price, 0).toFixed(2)}
-              </Typography>
-              {cart.length > 3 && (
-                <Typography color="green">
-                  Discount Applied: {cart.length > 5 ? "20%" : "10%"}
-                </Typography>
-              )}
+        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+          Confirm Checkout
+        </DialogTitle>
+        <IconButton
+          aria-label="close"
+          onClick={() => setIsCheckoutDialogOpen(false)}
+          sx={(theme) => ({
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: theme.palette.grey[500],
+          })}
+        >
+          <CloseIcon />
+        </IconButton>
+
+        <DialogContent dividers>
+          <Stack spacing={0.5}>
+            <Box display="flex" justifyContent="space-between">
+              <Typography variant="body2">Items:</Typography>
+              <Typography variant="body2">{cart.length}</Typography>
+            </Box>
+            {cart.length > 3 && (
+              <>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="body2">Subtotal:</Typography>
+                  <Typography variant="body2">
+                    ${cart.reduce((sum, m) => sum + m.price, 0).toFixed(2)}
+                  </Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between">
+                  <Typography variant="body2">Discount:</Typography>
+                  <Typography variant="body2" color="green">
+                    {cart.length > 5 ? "20%" : "10%"}
+                  </Typography>
+                </Box>
+              </>
+            )}
+            <Box display="flex" justifyContent="space-between">
+              <Typography variant="h6">Total:</Typography>
               <Typography variant="h6">
-                Total: ${calculateTotal(cart).toFixed(2)}
+                ${calculateTotal(cart).toFixed(2)}
               </Typography>
-              <Box sx={{ mt: 2, textAlign: "center" }}>
-                <Typography variant="body2" color="text.secondary">
-                  Confirm within {countdown} seconds
-                </Typography>
-                <Typography variant="caption" display="block">
-                  (Payment will be processed automatically)
-                </Typography>
-              </Box>
-            </Stack>
-          </DialogContentText>
+            </Box>
+          </Stack>
+          <Box sx={{ mt: 2, textAlign: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              Confirm within {countdown} seconds
+            </Typography>
+            <Typography variant="caption" display="block">
+              (Payment will be processed automatically)
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button
+            variant="outlined"
+            color="error"
             onClick={() => {
               setIsCheckoutDialogOpen(false);
               if (timerId) clearInterval(timerId);
@@ -399,11 +431,12 @@ export default function Home() {
             Cancel
           </Button>
           <Button
+            variant="contained"
+            color="success"
             onClick={() => {
               setIsCheckoutDialogOpen(false);
               clearCart();
             }}
-            color="success"
           >
             Confirm Payment
           </Button>
