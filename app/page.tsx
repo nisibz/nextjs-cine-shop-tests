@@ -26,7 +26,8 @@ import {
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { filterMovies, getNotFoundText } from "./utils/filterMovies";
 import useMovies from "./hooks/useMovies";
 import type { Movie } from "./types.ts";
 const NotFoundImage = "https://placehold.co/600x400?text=Image+Not+Found";
@@ -95,6 +96,11 @@ export default function Home() {
     }
   }, []);
 
+  const filteredMovies = useMemo(
+    () => filterMovies(movies, searchQuery),
+    [movies, searchQuery]
+  );
+
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
 
@@ -132,11 +138,7 @@ export default function Home() {
         </Stack>
       </Box>
       <Grid container spacing={2} sx={{ padding: 4 }}>
-        {movies
-          .filter((movie) =>
-            movie.title.toLowerCase().includes(searchQuery.toLowerCase()),
-          )
-          .map((movie: Movie) => (
+        {filteredMovies.map((movie: Movie) => (
             <Grid key={movie.id} size={{ xs: 12, sm: 4, md: 3 }}>
               <Card
                 sx={{
@@ -198,6 +200,12 @@ export default function Home() {
             </Grid>
           ))}
       </Grid>
+
+      {filteredMovies.length === 0 && (
+        <Typography variant="h5" align="center" sx={{ p: 4, color: "text.secondary" }}>
+          {getNotFoundText(searchQuery)}
+        </Typography>
+      )}
 
       <Drawer
         anchor="right"

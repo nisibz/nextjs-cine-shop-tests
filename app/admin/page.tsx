@@ -20,7 +20,8 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { filterMovies, getNotFoundText } from "../utils/filterMovies";
 import useMovies from "./../hooks/useMovies";
 import type { Movie } from "./../types";
 
@@ -29,6 +30,7 @@ export default function AdminPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [newPrice, setNewPrice] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handlePriceUpdate = () => {
     if (selectedMovie) {
@@ -36,6 +38,11 @@ export default function AdminPage() {
       setOpenDialog(false);
     }
   };
+
+  const filteredMovies = useMemo(
+    () => filterMovies(movies, searchQuery),
+    [movies, searchQuery]
+  );
 
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -45,6 +52,15 @@ export default function AdminPage() {
       <Typography variant="h4" gutterBottom>
         Movie Inventory
       </Typography>
+
+      <TextField
+        fullWidth
+        label="Search movies"
+        variant="outlined"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        sx={{ my: 2 }}
+      />
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -57,43 +73,52 @@ export default function AdminPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {movies.map((movie) => (
-              <TableRow key={movie.id}>
-                <TableCell>
-                  {movie.poster_path && (
-                    <Image
-                      src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
-                      alt={movie.title}
-                      width={50}
-                      height={75}
-                      style={{
-                        width: 50,
-                        height: 75,
-                        objectFit: "cover",
+            {filteredMovies.map((movie: Movie) => (
+                <TableRow key={movie.id}>
+                  <TableCell>
+                    {movie.poster_path && (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
+                        alt={movie.title}
+                        width={50}
+                        height={75}
+                        style={{
+                          width: 50,
+                          height: 75,
+                          objectFit: "cover",
+                        }}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>{movie.title}</TableCell>
+                  <TableCell>
+                    {new Date(movie.release_date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>${movie.price.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => {
+                        setSelectedMovie(movie);
+                        setNewPrice(movie.price.toFixed(2));
+                        setOpenDialog(true);
                       }}
-                    />
-                  )}
-                </TableCell>
-                <TableCell>{movie.title}</TableCell>
-                <TableCell>
-                  {new Date(movie.release_date).toLocaleDateString()}
-                </TableCell>
-                <TableCell>${movie.price.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="outlined"
-                    startIcon={<EditIcon />}
-                    onClick={() => {
-                      setSelectedMovie(movie);
-                      setNewPrice(movie.price.toFixed(2));
-                      setOpenDialog(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
+                    >
+                      Edit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            {filteredMovies.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                  <Typography variant="subtitle1" color="text.secondary">
+                    {getNotFoundText(searchQuery)}
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
