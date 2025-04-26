@@ -60,6 +60,17 @@ export default function useMovies() {
 
   useEffect(() => {
     fetchMovies();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchMovies();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   return { movies, loading, error, updateMoviePrice };
