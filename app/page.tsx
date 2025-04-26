@@ -27,6 +27,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import CloseIcon from "@mui/icons-material/Close";
 import RemoveShoppingCartIcon from "@mui/icons-material/RemoveShoppingCart";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useEffect, useState, useMemo } from "react";
 
 const MovieSkeleton = () => (
@@ -71,6 +72,8 @@ export default function Home() {
   });
   const [cartOpen, setCartOpen] = useState(false);
   const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
+  const [isOrderCompletedDialogOpen, setIsOrderCompletedDialogOpen] =
+    useState(false);
   const [countdown, setCountdown] = useState(60);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
 
@@ -559,11 +562,63 @@ export default function Home() {
                 setTransactionDate(new Date().toLocaleString());
               } else {
                 setIsCheckoutDialogOpen(false);
+                setIsOrderCompletedDialogOpen(true);
                 clearCart();
               }
             }}
           >
             {countdown === 0 ? "Retry Payment" : "Confirm Payment"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={isOrderCompletedDialogOpen}
+        onClose={() => setIsOrderCompletedDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ m: 0, p: 2 }}>
+          Order Completed
+          <IconButton
+            aria-label="close"
+            onClick={() => setIsOrderCompletedDialogOpen(false)}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ textAlign: "center", py: 4 }}>
+          <CheckCircleIcon
+            color="success"
+            sx={{ width: "92px", height: "92px" }}
+          />
+          <Typography variant="h4" color="success.main" gutterBottom>
+            Payment Successful
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Your order has been processed successfully
+          </Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            Order Number: #{orderNumber}
+          </Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            Transaction Date: {transactionDate}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={() => setIsOrderCompletedDialogOpen(false)}
+          >
+            OK
           </Button>
         </DialogActions>
       </Dialog>
